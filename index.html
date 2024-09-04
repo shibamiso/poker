@@ -54,6 +54,12 @@
         .button-container {
             margin-top: 10px;
         }
+        .positive {
+            color: green;
+        }
+        .negative {
+            color: red;
+        }
         .footer {
             font-size: 0.75em;
             color: gray;
@@ -107,9 +113,16 @@
     let isRebuy = false;
     let isPnLCalculated = false;  // Track if PnL has been calculated
 
+    // Warn user before page reload/refresh
+    window.addEventListener("beforeunload", function (e) {
+        const confirmationMessage = "Are you sure you want to leave? Your data will be lost.";
+        (e || window.event).returnValue = confirmationMessage;
+        return confirmationMessage;
+    });
+
     // Prompt the user for number of players and default buy-in value upon page load
     window.onload = function () {
-        const numPlayers = parseInt(prompt("How many players are playing?"));
+        const numPlayers = parseInt(prompt("How many players are playing? v0.1.4"));
         if (isNaN(numPlayers) || numPlayers <= 0) {
             alert("Please enter a valid number of players.");
             return;
@@ -198,12 +211,26 @@
         }
     }
 
+    function formatNumber(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Adds commas to large numbers
+    }
+
     function endGame() {
         players.forEach(player => {
             const buyIn = parseInt(player.buyIn.value) || 0;
             const finalChips = parseInt(player.finalChips.value) || 0;
             const pnl = finalChips - buyIn;
-            player.pnl.textContent = `${pnl >= 0 ? '+' : ''}${pnl}`;
+            
+            // Format PnL and display with color
+            const pnlCell = player.pnl;
+            pnlCell.textContent = formatNumber(pnl);
+            pnlCell.classList.remove('positive', 'negative');  // Reset classes
+            if (pnl >= 0) {
+                pnlCell.classList.add('positive');  // Positive PnL in green
+                pnlCell.textContent = `+${formatNumber(pnl)}`;  // Add plus sign for positive
+            } else {
+                pnlCell.classList.add('negative');  // Negative PnL in red
+            }
         });
 
         isPnLCalculated = true;  // Mark that PnL has been calculated
@@ -220,7 +247,7 @@
         if (result === 0) {
             checksumResult.textContent = '✅ All is balanced!';
         } else {
-            checksumResult.textContent = `❌ $${Math.abs(result)} ${result > 0 ? 'more' : 'less'} than initial`;
+            checksumResult.textContent = `❌ $${Math.abs(formatNumber(result))} ${result > 0 ? 'more' : 'less'} than initial`;
         }
     }
 
@@ -239,10 +266,10 @@
             if (name && buyIn > 0) {
                 // Before PnL calculation, only export name and buy-in
                 if (!isPnLCalculated) {
-                    result += `${index + 1}. ${name} ${buyIn}\n`;
+                    result += `${index + 1}. ${name} ${formatNumber(buyIn)}\n`;
                 } else {
                     // After PnL calculation, export name, buy-in, final chips, and PnL
-                    result += `${index + 1}. ${name} ${buyIn} (${finalChips}) [PnL: ${pnl >= 0 ? '+' : ''}${pnl}]\n`;
+                    result += `${index + 1}. ${name} ${formatNumber(buyIn)} (${formatNumber(finalChips)}) [PnL: ${pnl >= 0 ? '+' : ''}${formatNumber(pnl)}]\n`;
                 }
             }
         });
