@@ -104,11 +104,11 @@
 <p id="checksumResult"></p>
 
 <div class="footer">
-    v0.1.7
+    v0.1.8
 </div>
 
 <script>
-    let versionNumber = 'v0.1.7';
+    let versionNumber = 'v0.1.8';
     let players = [];
     let gameStarted = false;
     let isRebuy = false;
@@ -138,11 +138,11 @@
             if (!playerName) {
                 playerName = `Player ${i + 1}`;  // Fallback to default name if nothing entered
             }
-            addPlayer(defaultBuyIn, playerName);
+            addPlayer(playerName, defaultBuyIn);  // Pass playerName and defaultBuyIn to addPlayer function
         }
     }
 
-    function addPlayer(defaultBuyIn = null, playerName = "") {
+    function addPlayer(playerName = "", defaultBuyIn = null) {
         const playerRow = document.createElement('tr');
         const nameCell = document.createElement('td');
         const buyInCell = document.createElement('td');
@@ -161,7 +161,7 @@
         buyInInput.placeholder = 'Buy-In';
         buyInInput.style.width = "90%";  // Ensure inputs fit within the table cell
         if (defaultBuyIn !== "" && defaultBuyIn !== null) {
-            buyInInput.value = defaultBuyIn;
+            buyInInput.value = defaultBuyIn;  // Set the default buy-in if provided
         }
         buyInCell.appendChild(buyInInput);
 
@@ -196,7 +196,7 @@
         const buyInValue = prompt("Enter the buy-in amount for this player:");
 
         // Adding the new player and passing the values to the table
-        addPlayer(null, playerName);
+        addPlayer(playerName, buyInValue);
 
         // Get the last added player
         const player = players[players.length - 1];
@@ -274,7 +274,7 @@
         const checksumResult = document.getElementById('checksumResult');
 
         if (result === 0) {
-            checksumResult.textContent = '✅ All is balanced!';
+            checksumResult.textContent = '✅ Wohooo! Every1 got their chip count right!';
         } else {
             checksumResult.textContent = `❌ $${formatNumber(Math.abs(result))} ${result > 0 ? 'more' : 'less'} than initial`;
         }
