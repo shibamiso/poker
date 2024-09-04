@@ -58,13 +58,12 @@
             font-size: 0.75em;
             color: gray;
             text-align: center;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
             padding: 10px;
-            background-color: white; /* To avoid overlap with page content */
-            z-index: 1; /* Ensures it is on top of content */
-            visibility: visible; /* Always visible */
+            background-color: white;
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            width: 100%;
         }
     </style>
 </head>
@@ -106,6 +105,7 @@
     let players = [];
     let gameStarted = false;
     let isRebuy = false;
+    let isPnLCalculated = false;  // Track if PnL has been calculated
 
     // Prompt the user for number of players and default buy-in value upon page load
     window.onload = function () {
@@ -155,7 +155,7 @@
         finalChipsInput.type = 'number';
         finalChipsInput.placeholder = 'Final Chips';
         finalChipsInput.style.width = "90%";  // Ensure inputs fit within the table cell
-        finalChipsInput.disabled = true;
+        finalChipsInput.disabled = !gameStarted;  // Disable only if game hasn't started yet
         finalChipsCell.appendChild(finalChipsInput);
 
         playerRow.appendChild(nameCell);
@@ -184,7 +184,7 @@
             players.forEach(player => {
                 player.name.disabled = true;
                 player.buyIn.disabled = true;
-                player.finalChips.disabled = false;
+                player.finalChips.disabled = false;  // Enable Final Chips input
             });
             actionButton.textContent = 'Re-buy';
             gameStarted = true;
@@ -206,6 +206,7 @@
             player.pnl.textContent = `${pnl >= 0 ? '+' : ''}${pnl}`;
         });
 
+        isPnLCalculated = true;  // Mark that PnL has been calculated
         calculateChecksum();
     }
 
@@ -235,12 +236,13 @@
             const finalChips = parseInt(player.finalChips.value) || 0;
             const pnl = finalChips - buyIn;
 
-            // Only include players with both Name and Buy-In filled
             if (name && buyIn > 0) {
-                if (gameStarted) {
-                    result += `${index + 1}. ${name} ${buyIn} (${finalChips}) [PnL: ${pnl >= 0 ? '+' : ''}${pnl}]\n`;
-                } else {
+                // Before PnL calculation, only export name and buy-in
+                if (!isPnLCalculated) {
                     result += `${index + 1}. ${name} ${buyIn}\n`;
+                } else {
+                    // After PnL calculation, export name, buy-in, final chips, and PnL
+                    result += `${index + 1}. ${name} ${buyIn} (${finalChips}) [PnL: ${pnl >= 0 ? '+' : ''}${pnl}]\n`;
                 }
             }
         });
