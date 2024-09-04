@@ -60,7 +60,7 @@
             font-size: 0.75em;
             color: gray;
             padding: 10px;
-            visibility: visible; /* Ensure visibility */
+            visibility: visible;
         }
     </style>
 </head>
@@ -169,22 +169,31 @@
     }
 
     function startOrRebuy() {
+        const actionButton = document.getElementById('gameActionButton');
+
         if (isRebuy) {
-            // Allow editing of Buy-In fields again
+            // Re-seal the Buy-In and Name fields when "Game Begins" is pressed after a re-buy
             players.forEach(player => {
-                player.buyIn.disabled = false;
+                player.buyIn.disabled = true;
+                player.name.disabled = true;
             });
-            document.getElementById('gameActionButton').textContent = 'Game Begins';
+            actionButton.textContent = 'Re-buy';
             isRebuy = false;
         } else if (!gameStarted) {
-            // Game begins: Seal the Names and Buy-In fields
+            // First time "Game Begins": Seal the Names and Buy-In fields
             players.forEach(player => {
                 player.name.disabled = true;
                 player.buyIn.disabled = true;
                 player.finalChips.disabled = false;
             });
-            document.getElementById('gameActionButton').textContent = 'Re-buy';
+            actionButton.textContent = 'Re-buy';
             gameStarted = true;
+        } else {
+            // Re-buy mode: Allow editing of Buy-In fields again
+            players.forEach(player => {
+                player.buyIn.disabled = false;
+            });
+            actionButton.textContent = 'Game Begins';
             isRebuy = true;
         }
     }
