@@ -51,6 +51,12 @@
         .button-container {
             margin-top: 10px;
         }
+        .footnote {
+            font-size: 0.75em;
+            color: gray;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -69,31 +75,44 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Initial 8 rows of players -->
+            <!-- Rows will be dynamically created here based on user input -->
         </tbody>
     </table>
     <button class="button" onclick="addPlayer()">Add Player</button>
 </div>
 
 <div class="button-container">
-    <button class="button green" id="gameActionButton" onclick="startGame()">Game Begins</button>
+    <button class="button green" id="gameActionButton" onclick="startOrRebuy()">Game Begins</button>
     <button class="button red" onclick="endGame()">Calculate PnL</button>
     <button class="button orange" onclick="exportToClipboard()">Export to Clipboard</button>
 </div>
 
 <p id="checksumResult"></p>
 
+<p class="footnote">v0.12</p>
+
 <script>
     let players = [];
     let gameStarted = false;
-    let isRebuyMode = false; // Indicates if "Re-buy" mode is active
+    let isRebuy = false;
 
-    // Initialize with 8 default players
-    for (let i = 0; i < 8; i++) {
-        addPlayer();
+    // Prompt the user for number of players and default buy-in value upon page load
+    window.onload = function () {
+        const numPlayers = prompt("How many players are playing?");
+        const defaultBuyInOption = confirm("Would you like to set a default buy-in value for all players? Click 'Cancel' to enter manually.");
+        
+        let defaultBuyIn = null;
+        if (defaultBuyInOption) {
+            defaultBuyIn = prompt("Enter the default buy-in value for all players:");
+        }
+
+        // Add the specified number of players with or without the default buy-in
+        for (let i = 0; i < parseInt(numPlayers); i++) {
+            addPlayer(defaultBuyIn);
+        }
     }
 
-    function addPlayer() {
+    function addPlayer(defaultBuyIn = null) {
         const playerRow = document.createElement('tr');
         const nameCell = document.createElement('td');
         const buyInCell = document.createElement('td');
@@ -110,6 +129,9 @@
         buyInInput.type = 'number';
         buyInInput.placeholder = 'Buy-In';
         buyInInput.style.width = "90%";  // Ensure inputs fit within the table cell
+        if (defaultBuyIn !== null) {
+            buyInInput.value = defaultBuyIn;
+        }
         buyInCell.appendChild(buyInInput);
 
         const finalChipsInput = document.createElement('input');
@@ -129,25 +151,24 @@
         players.push({ name: nameInput, buyIn: buyInInput, finalChips: finalChipsInput, pnl: pnlCell });
     }
 
-    function startGame() {
-        gameStarted = true;
-
-        if (isRebuyMode) {
-            // If in "Re-buy" mode, unseal only the buy-in column
+    function startOrRebuy() {
+        if (isRebuy) {
+            // Allow editing of Buy-In fields again
             players.forEach(player => {
-                player.buyIn.disabled = false; // Allow re-buys
+                player.buyIn.disabled = false;
             });
-            isRebuyMode = false;
-            document.getElementById('gameActionButton').textContent = "Game Begins"; // Switch button back to "Game Begins"
-        } else {
-            // Seal the Names and Buy-In fields
+            document.getElementById('gameActionButton').textContent = 'Game Begins';
+            isRebuy = false;
+        } else if (!gameStarted) {
+            // Game begins: Seal the Names and Buy-In fields
             players.forEach(player => {
                 player.name.disabled = true;
                 player.buyIn.disabled = true;
-                player.finalChips.disabled = false; // Enable Final Chips input
+                player.finalChips.disabled = false;
             });
-            isRebuyMode = true;
-            document.getElementById('gameActionButton').textContent = "Re-buy"; // Change button text to "Re-buy"
+            document.getElementById('gameActionButton').textContent = 'Re-buy';
+            gameStarted = true;
+            isRebuy = true;
         }
     }
 
@@ -183,13 +204,13 @@
         let result = `[${date}] Poker Game as at [${time}]\n`;
 
         players.forEach((player, index) => {
-            const name = player.name.value || '';
+            const name = player.name.value.trim();
             const buyIn = parseInt(player.buyIn.value) || 0;
             const finalChips = parseInt(player.finalChips.value) || 0;
+            const pnl = finalChips - buyIn;
 
-            // Export only rows with input data (non-empty name or non-zero buy-in)
-            if (name.trim() !== '' || buyIn > 0) {
-                const pnl = finalChips - buyIn;
+            // Only include players with both Name and Buy-In filled
+            if (name && buyIn > 0) {
                 if (gameStarted) {
                     result += `${index + 1}. ${name} ${buyIn} (${finalChips}) [PnL: ${pnl >= 0 ? '+' : ''}${pnl}]\n`;
                 } else {
