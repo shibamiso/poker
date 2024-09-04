@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            table-layout: fixed; /* Ensures columns have fixed widths */
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            word-wrap: break-word; /* Ensures text wraps within the column */
+        }
+        /* Specific column widths for the table */
+        th, td:first-child {
+            width: 35%; /* Name column */
+        }
+        td:nth-child(2), td:nth-child(3), td:nth-child(4) {
+            width: 20%; /* Buy-In, Final Chips, and PnL columns */
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .button.red {
+            background-color: red;
+        }
+        .button.green {
+            background-color: green;
+        }
+        .button.orange {
+            background-color: orange;
+        }
+        .button-container {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Poker Game Tracker</h1>
+
+<div id="playerForm">
+    <h2>Player Info</h2>
+    <table id="playerTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Buy-In</th>
+                <th>Final Chips</th>
+                <th>PnL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Initial Placeholder Row -->
+            <tr>
+                <td colspan="4" style="text-align:center;">No players added yet</td>
+            </tr>
+        </tbody>
+    </table>
+    <button class="button" onclick="addPlayer()">Add Player</button>
+</div>
+
+<div class="button-container">
+    <button class="button green" onclick="startGame()">Game Begins</button>
+    <button class="button red" onclick="endGame()">Game Ends</button>
+    <button class="button orange" onclick="exportToClipboard()">Export to Clipboard</button>
+</div>
+
+<p id="checksumResult"></p>
+
+<script>
+    let players = [];
+    let gameStarted = false;
+
+    function addPlayer() {
+        // Remove placeholder row if it exists
+        const placeholderRow = document.querySelector("#playerTable tbody tr");
+        if (placeholderRow && placeholderRow.cells[0].colSpan === 4) {
+            placeholderRow.remove();
+        }
+
+        // Create a new player row
+        const playerRow = document.createElement('tr');
+        const nameCell = document.createElement('td');
+        const buyInCell = document.createElement('td');
+        const finalChipsCell = document.createElement('td');
+        const pnlCell = document.createElement('td');
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Name';
+        nameInput.style.width = "90%";  // Ensure inputs fit within the table cell
+        nameCell.appendChild(nameInput);
+
+        const buyInInput = document.createElement('input');
+        buyInInput.type = 'number';
+        buyInInput.placeholder = 'Buy-In';
+        buyInInput.style.width = "90%";  // Ensure inputs fit within the table cell
+        buyInCell.appendChild(buyInInput);
+
+        const finalChipsInput = document.createElement('input');
+        finalChipsInput.type = 'number';
+        finalChipsInput.placeholder = 'Final Chips';
+        finalChipsInput.style.width = "90%";  // Ensure inputs fit within the table cell
+        finalChipsInput.disabled = true;
+        finalChipsCell.appendChild(finalChipsInput);
+
+        playerRow.appendChild(nameCell);
+        playerRow.appendChild(buyInCell);
+        playerRow.appendChild(finalChipsCell);
+        playerRow.appendChild(pnlCell);
+
+        document.querySelector('#playerTable tbody').appendChild(playerRow);
+
+        players.push({ name: nameInput, buyIn: buyInInput, finalChips: finalChipsInput, pnl: pnlCell });
+    }
+
+    function startGame() {
+        gameStarted = true;
+        players.forEach(player => {
+            player.finalChips.disabled = false;
+        });
+    }
+
+    function endGame() {
+        players.forEach(player => {
+            const buyIn = parseInt(player.buyIn.value) || 0;
+            const finalChips = parseInt(player.finalChips.value) || 0;
+            const pnl = finalChips - buyIn;
+            player.pnl.textContent = `${pnl >= 0 ? '+' : ''}${pnl}`;
+        });
+
+        calculateChecksum();
+    }
+
+    function calculateChecksum() {
+        const totalBuyIn = players.reduce((sum, player) => sum + (parseInt(player.buyIn.value) || 0), 0);
+        const totalFinalChips = players.reduce((sum, player) => sum + (parseInt(player.finalChips.value) || 0), 0);
+
+        const result = totalFinalChips - totalBuyIn;
+        const checksumResult = document.getElementById('checksumResult');
+
+        if (result === 0) {
+            checksumResult.textContent = '✅ All is balanced!';
+        } else {
+            checksumResult.textContent = `❌ $${Math.abs(result)} ${result > 0 ? 'more' : 'less'} than initial`;
+        }
+    }
+
+    function exportToClipboard() {
+        const now = new Date();
+        const date = now.toISOString().split('T')[0];
+        const time = now.toTimeString().split(' ')[0].slice(0, 5);
+        let result = `[${date}] Poker Game as at [${time}]\n`;
+
+        players.forEach((player, index) => {
+            const name = player.name.value || 'Player';
+            const buyIn = parseInt(player.buyIn.value) || 0;
+            const finalChips = parseInt(player.finalChips.value) || 0;
+            const pnl = finalChips - buyIn;
+
+            if (gameStarted) {
+                result += `${index + 1}. ${name} ${buyIn} (${finalChips}) [PnL: ${pnl >= 0 ? '+' : ''}${pnl}]\n`;
+            } else {
+                result += `${index + 1}. ${name} ${buyIn}\n`;
+            }
+        });
+
+        navigator.clipboard.writeText(result).then(() => {
+            alert('Copied to clipboard!');
+        });
+    }
+</script>
+
+</body>
+</html>
