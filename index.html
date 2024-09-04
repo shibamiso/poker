@@ -104,7 +104,7 @@
 <p id="checksumResult"></p>
 
 <div class="footer">
-    v0.1.3
+    v0.1.5
 </div>
 
 <script>
@@ -122,7 +122,7 @@
 
     // Prompt the user for number of players and default buy-in value upon page load
     window.onload = function () {
-        const numPlayers = parseInt(prompt("How many players are playing? v0.1.4"));
+        const numPlayers = parseInt(prompt("How many players are playing? v0.1.5"));
         if (isNaN(numPlayers) || numPlayers <= 0) {
             alert("Please enter a valid number of players.");
             return;
@@ -159,7 +159,7 @@
         buyInInput.type = 'number';
         buyInInput.placeholder = 'Buy-In';
         buyInInput.style.width = "90%";  // Ensure inputs fit within the table cell
-        if (defaultBuyIn !== "") {
+        if (defaultBuyIn !== "" && defaultBuyIn !== null) {
             buyInInput.value = defaultBuyIn;
         }
         buyInCell.appendChild(buyInInput);
@@ -178,7 +178,31 @@
 
         document.querySelector('#playerTable tbody').appendChild(playerRow);
 
-        players.push({ name: nameInput, buyIn: buyInInput, finalChips: finalChipsInput, pnl: pnlCell });
+        const player = { name: nameInput, buyIn: buyInInput, finalChips: finalChipsInput, pnl: pnlCell };
+        players.push(player);
+
+        // If the game has started, seal the name and buy-in fields and enable final chips
+        if (gameStarted) {
+            nameInput.disabled = true;
+            buyInInput.disabled = true;
+            finalChipsInput.disabled = false;
+        }
+    }
+
+    // Overriding the addPlayer function when the game has started
+    function addPlayerAfterGameStarts() {
+        const playerName = prompt("Enter the name of the new player:");
+        const buyInValue = prompt("Enter the buy-in amount for this player:");
+
+        addPlayer(null, playerName);
+
+        // Get the last added player
+        const player = players[players.length - 1];
+
+        player.buyIn.value = buyInValue;
+        player.name.disabled = true;
+        player.buyIn.disabled = true;
+        player.finalChips.disabled = false;
     }
 
     function startOrRebuy() {
@@ -247,7 +271,7 @@
         if (result === 0) {
             checksumResult.textContent = '✅ All is balanced!';
         } else {
-            checksumResult.textContent = `❌ $${Math.abs(formatNumber(result))} ${result > 0 ? 'more' : 'less'} than initial`;
+            checksumResult.textContent = `❌ $${formatNumber(Math.abs(result))} ${result > 0 ? 'more' : 'less'} than initial`;
         }
     }
 
@@ -258,19 +282,27 @@
         let result = `[${date}] Poker Game as at [${time}]\n`;
 
         players.forEach((player, index) => {
-            const name = player.name.value.trim();
+            let name = player.name.value.trim();
             const buyIn = parseInt(player.buyIn.value) || 0;
             const finalChips = parseInt(player.finalChips.value) || 0;
             const pnl = finalChips - buyIn;
 
-            if (name && buyIn > 0) {
-                // Before PnL calculation, only export name and buy-in
-                if (!isPnLCalculated) {
-                    result += `${index + 1}. ${name} ${formatNumber(buyIn)}\n`;
-                } else {
-                    // After PnL calculation, export name, buy-in, final chips, and PnL
-                    result += `${index + 1}. ${name} ${formatNumber(buyIn)} (${formatNumber(finalChips)}) [PnL: ${pnl >= 0 ? '+' : ''}${formatNumber(pnl)}]\n`;
-                }
+            // If both Name and Buy-In are blank, skip the row
+            if (!name && !buyIn) {
+                return; // Skip this player
+            }
+
+            // If Name is blank but Buy-In is not, set Name to "Anon"
+            if (!name) {
+                name = "Anon";
+            }
+
+            // Before PnL calculation, only export name and buy-in
+            if (!isPnLCalculated) {
+                result += `${index + 1}. ${name} ${formatNumber(buyIn)}\n`;
+            } else {
+                // After PnL calculation, export name, buy-in, final chips, and PnL
+                result += `${index + 1}. ${name} ${formatNumber(buyIn)} (${formatNumber(finalChips)}) [PnL: ${pnl >= 0 ? '+' : ''}${formatNumber(pnl)}]\n`;
             }
         });
 
@@ -278,6 +310,17 @@
             alert('Copied to clipboard!');
         });
     }
+
+    // Modify the addPlayer function to handle adding players after the game has started
+    const originalAddPlayerFunction = addPlayer;
+    addPlayer = function () {
+        if (gameStarted) {
+            addPlayerAfterGameStarts();
+        } else {
+            originalAddPlayerFunction();
+        }
+    };
+
 </script>
 
 </body>
