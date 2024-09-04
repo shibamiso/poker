@@ -69,10 +69,7 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Initial Placeholder Row -->
-            <tr>
-                <td colspan="4" style="text-align:center;">No players added yet</td>
-            </tr>
+            <!-- Initial 8 rows of players -->
         </tbody>
     </table>
     <button class="button" onclick="addPlayer()">Add Player</button>
@@ -80,7 +77,7 @@
 
 <div class="button-container">
     <button class="button green" onclick="startGame()">Game Begins</button>
-    <button class="button red" onclick="endGame()">Game Ends</button>
+    <button class="button red" onclick="endGame()">Calculate PnL</button>
     <button class="button orange" onclick="exportToClipboard()">Export to Clipboard</button>
 </div>
 
@@ -90,14 +87,12 @@
     let players = [];
     let gameStarted = false;
 
-    function addPlayer() {
-        // Remove placeholder row if it exists
-        const placeholderRow = document.querySelector("#playerTable tbody tr");
-        if (placeholderRow && placeholderRow.cells[0].colSpan === 4) {
-            placeholderRow.remove();
-        }
+    // Initialize with 8 default players
+    for (let i = 0; i < 8; i++) {
+        addPlayer();
+    }
 
-        // Create a new player row
+    function addPlayer() {
         const playerRow = document.createElement('tr');
         const nameCell = document.createElement('td');
         const buyInCell = document.createElement('td');
@@ -136,6 +131,10 @@
     function startGame() {
         gameStarted = true;
         players.forEach(player => {
+            // Seal the Names and Buy-In fields
+            player.name.disabled = true;
+            player.buyIn.disabled = true;
+            // Enable Final Chips input
             player.finalChips.disabled = false;
         });
     }
