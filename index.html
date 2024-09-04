@@ -94,7 +94,7 @@
 <p id="checksumResult"></p>
 
 <div class="footer">
-    v0.12
+    v0.1.3
 </div>
 
 <script>
@@ -104,7 +104,12 @@
 
     // Prompt the user for number of players and default buy-in value upon page load
     window.onload = function () {
-        const numPlayers = prompt("How many players are playing?");
+        const numPlayers = parseInt(prompt("How many players are playing?"));
+        if (isNaN(numPlayers) || numPlayers <= 0) {
+            alert("Please enter a valid number of players.");
+            return;
+        }
+
         const defaultBuyInOption = confirm("Would you like to set a default buy-in value for all players? Click 'Cancel' to enter manually.");
         
         let defaultBuyIn = null;
@@ -112,13 +117,17 @@
             defaultBuyIn = prompt("Enter the default buy-in value for all players:");
         }
 
-        // Add the specified number of players with or without the default buy-in
-        for (let i = 0; i < parseInt(numPlayers); i++) {
-            addPlayer(defaultBuyIn);
+        // Prompt for each player's name
+        for (let i = 0; i < numPlayers; i++) {
+            let playerName = prompt(`Enter name of player ${i + 1}:`);
+            if (!playerName) {
+                playerName = `Player ${i + 1}`;  // Fallback to default name if nothing entered
+            }
+            addPlayer(defaultBuyIn, playerName);
         }
     }
 
-    function addPlayer(defaultBuyIn = null) {
+    function addPlayer(defaultBuyIn = null, playerName = "") {
         const playerRow = document.createElement('tr');
         const nameCell = document.createElement('td');
         const buyInCell = document.createElement('td');
@@ -128,6 +137,7 @@
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.placeholder = 'Name';
+        nameInput.value = playerName;  // Pre-fill with the entered name
         nameInput.style.width = "90%";  // Ensure inputs fit within the table cell
         nameCell.appendChild(nameInput);
 
